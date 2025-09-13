@@ -1,0 +1,39 @@
+{
+"measurement_id": "88d58a78-95d3-4b9c-b0a4-aab2e2ed73d5",
+"sensor_id": "HUM-001",
+"date": "2024-05-28T15:22:18+02:00",
+"station": "MET-004",
+"info": {
+	"category": "Humidity",
+	"measurement": 40,
+	"unit": "Percentage"
+}
+}
+
+
+v@faros:~/git/weather-station$ docker run -d --name timescaledb -p 5432:5432  -v./pgdata:/pgdata -e PGDATA=/pgdata -e POSTGRES_PASSWORD=password timescale/timescaledb-ha:pg17
+
+
+
+(kill and chmod on pgdata to give postgres user full permission: 
+v@faros:~/git/weather-station$ sudo chown 1000:1000 pgdata
+
+
+
+v@faros:~/git/weather-station$ psql -d "postgres://postgres:password@localhost/postgres"
+Command 'psql' not found, but can be installed with:
+sudo apt install postgresql-client-common
+v@faros:~/git/weather-station$ docker exec -it timescaledb psql -U postgres
+psql (17.6 (Ubuntu 17.6-1.pgdg22.04+1))
+Type "help" for help.
+
+postgres=# \dx
+                                                    List of installed extensions
+        Name         | Version |   Schema   |                                      Description                                      
+---------------------+---------+------------+---------------------------------------------------------------------------------------
+ plpgsql             | 1.0     | pg_catalog | PL/pgSQL procedural language
+ timescaledb         | 2.21.3  | public     | Enables scalable inserts and complex queries for time-series data (Community Edition)
+ timescaledb_toolkit | 1.21.0  | public     | Library of analytical hyperfunctions, time-series pipelining, and other SQL utilities
+(3 rows)
+
+
