@@ -11,6 +11,35 @@
 }
 
 
+==== DB selection
+For storing and efficiently querying your meteorological sensor measurements with the given JSON structure, a time-series optimized relational database like TimescaleDB (PostgreSQL extension) is a very good fit.
+
+Why TimescaleDB?
+-> It extends PostgreSQL with time-series functionality.
+
+-> Supports efficient partitioning ("hypertables") by time and other dimensions.
+
+-> Allows complex SQL queries, including grouping by date, station, and category, with high performance.
+
+-> Can handle large volumes of IoT data with time range and aggregation queries.
+
+-> Supports native JSONB for flexible fields.
+
+==== Why not mongo?
+MongoDB Limitations for Your Use Case:
+Aggregation queries involving grouping by timestamp, station, and category are less efficient than in TimescaleDB.
+
+Complex queries such as multi-dimensional aggregates, roll-ups, or per-device/per-hour calculations perform significantly slower in MongoDB.
+
+MongoDB lacks the same level of native SQL support and relational joins which make querying across dimensions easier.
+
+Benchmarks show TimescaleDB can be 10-20x faster on common IoT time-series aggregate queries, and 50x faster on complex queries.
+
+
+
+
+
+
 v@faros:~/git/weather-station$ docker run -d --name timescaledb -p 5432:5432  -v./pgdata:/pgdata -e PGDATA=/pgdata -e POSTGRES_PASSWORD=password timescale/timescaledb-ha:pg17
 
 
