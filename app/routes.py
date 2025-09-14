@@ -1,5 +1,5 @@
 from app import app, async_session
-from app.models import User
+from app.models import Measurement
 from flask import jsonify
 from sqlalchemy.sql import select
 
@@ -13,7 +13,7 @@ def index():
 @app.route('/async-data')
 async def get_data():
     async with async_session() as session:
-        stmt = select(User).order_by(User.id)
+        stmt = select(Measurement).order_by(Measurement.date)
         result = await session.execute(stmt)
         data = result.fetchall()
         return jsonify([tuple(row) for row in data])
