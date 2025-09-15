@@ -34,7 +34,15 @@ class Station(db.Model):
     latitude: so.Mapped[float] = so.mapped_column(sa.Float)
     longtitude: so.Mapped[float] = so.mapped_column(sa.Float)
     date_install: so.Mapped[TIMESTAMP] = so.mapped_column(sa.TIMESTAMP)
- 
+    '''
+    sensors = so.relationship(
+        "Sensor",
+        back_populates="station",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
+    '''
+
     def __repr__(self):
         return f"<City {self.code} {self.city}>"
 
@@ -43,9 +51,12 @@ class Sensor(db.Model):
     __tablename__ = "sensor"
     id: so.Mapped[str] = so.mapped_column(sa.String(64),
                                                  primary_key=True)
-    station_code: so.Mapped[str] = so.mapped_column(sa.ForeignKey("station.code"), index=True)
+    station_code: so.Mapped[str] = so.mapped_column(sa.ForeignKey("station.code",
+                                                                  ondelete="CASCADE"))
     category: so.Mapped[str] = so.mapped_column(sa.String(64))
-    
+    '''
+    station = so.relationship(Station, back_populates="sensors")
+    '''
     def __repr__(self):
         return f"<Sensor {self.id} {self.station_code} {self.category}>"
 
