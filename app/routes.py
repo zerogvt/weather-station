@@ -3,6 +3,7 @@ from app.utils import flatten_data
 from app.models import Measurement
 from flask import jsonify, request
 from sqlalchemy.sql import select
+from sqlalchemy.exc import IntegrityError
 
 
 @app.route('/')
@@ -21,6 +22,15 @@ async def get_data():
 
 @app.route('/ingest', methods=['POST'])
 async def ingest_data():
-    content = request.json
-    print("===>", content)
-    return flatten_data(request.json)
+    try:
+        content = request.json
+        flattened = flatten_data(content)
+        M = Measurement(**flattened)
+        async with async_session() as session:
+            async with session.begin():
+                session.add(M)
+                return jsonify(M), 201
+    except TypeError as e:
+        return {"error": f"Malformed measurement: {e}"},  400
+    except IntegrityError as e:
+        return {"error": f"Integrity Error: {e}"},  400

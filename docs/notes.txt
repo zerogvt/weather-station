@@ -80,4 +80,11 @@ curl --header "Content-Type: application/json" \
 } \
 }' \
   http://localhost:5000/ingest
+  
+  
+  
+curl --header "Content-Type: application/json" --request POST --data '{ "measurement_id": "88d58a78-95d3-4b9c-b0a4-aab2e2ed73d5", "sensor_id": "HUM-001" }'  http://localhost:5000/ingest
+
+
+flask db init && flask db migrate && flask db upgrade
 
