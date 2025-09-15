@@ -64,9 +64,6 @@ async def get_forecast(city, usrdate):
                     .order_by(Forecast.forecast_date.desc())
                 result = await session.execute(stmt)
                 forecast_data = result.first()
-                # and get actual averages
-                
-
                 if forecast_data:
                     return jsonify(tuple(forecast_data)), 200
                 else:
