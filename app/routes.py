@@ -4,6 +4,8 @@ from app.models import Measurement, Forecast, Station, Sensor
 from flask import jsonify, request
 from sqlalchemy.sql import select
 from sqlalchemy.exc import IntegrityError
+from datetime import date
+from markupsafe import escape
 
 
 @app.route('/')
@@ -49,6 +51,30 @@ async def add_forecast():
     except IntegrityError as e:
         return {"error": f"Integrity Error: {e}"},  400
 
+
+@app.route('/forecast/<city>/<usrdate>', methods=['GET'])
+async def get_forecast(city, usrdate):
+    try:
+        target_date = date.fromisoformat(escape(usrdate))
+        async with async_session() as session:
+            async with session.begin():
+                # get forecast data
+                stmt = select(Forecast).where(Forecast.forecast_date == target_date)\
+                    .where(Forecast.city == city.upper())\
+                    .order_by(Forecast.forecast_date.desc())
+                result = await session.execute(stmt)
+                forecast_data = result.first()
+                # and get actual averages
+                
+
+                if forecast_data:
+                    return jsonify(tuple(forecast_data)), 200
+                else:
+                    return {"error": f"no data for {usrdate}"}, 200
+    except TypeError as e:
+        return {"error": f"Malformed data: {e}"},  400
+
+
 @app.route('/station', methods=['POST'])
 async def add_station():
     try:
@@ -74,3 +100,4 @@ async def add_sensor():
         return {"error": f"Malformed data: {e}"},  400
     except IntegrityError as e:
         return {"error": f"Integrity Error: {e}"},  400
+

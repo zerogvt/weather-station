@@ -88,3 +88,12 @@ curl --header "Content-Type: application/json" --request POST --data '{ "measure
 
 flask db init && flask db migrate && flask db upgrade
 
+
+
+SELECT * FROM (measurement M JOIN
+(SELECT station.code as station, sensor.id as sensor_id 
+FROM public.station JOIN sensor
+ON station.code = sensor.station_code) as S
+ON M.station = S.station and M.sensor_id = S.sensor_id) as Res
+WHERE Res.date::date = date '2024-05-28' 
+

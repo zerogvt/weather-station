@@ -12,8 +12,9 @@ from datetime import date
 class Measurement(db.Model):
     __tablename__ = "measurement"
     measurement_id: so.Mapped[str] = so.mapped_column(sa.String(64))
-    station: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
-    sensor_id: so.Mapped[str] = so.mapped_column(sa.String(64),
+    station: so.Mapped[str] = so.mapped_column(sa.ForeignKey("station.code"),
+                                               index=True)
+    sensor_id: so.Mapped[str] = so.mapped_column(sa.ForeignKey("sensor.id"),
                                                  primary_key=True)
     date: so.Mapped[TIMESTAMP] = so.mapped_column(sa.TIMESTAMP(timezone=True),
                                                   primary_key=True)
