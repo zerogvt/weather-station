@@ -68,7 +68,7 @@ class Measurement(db.Model):
  
     def __repr__(self):
         return f"<Measurement {self.measurement_id}>"
-
+    
 
 @dataclass
 class Sensor(db.Model):
