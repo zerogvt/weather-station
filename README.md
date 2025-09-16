@@ -9,4 +9,4 @@ See populate_db.sh
 `docker build -t zerogvt/weather .`
 
 ## Run
-`docker run -it -v ${PWD}/pgdata:/weather/pgdata -p 5000:5000 zerogvt/weather ` 
+`docker run -it -v ${PWD}/pgdata:/weather/pgdata -p 5000:5000 --network="host" zerogvt/weather` 
