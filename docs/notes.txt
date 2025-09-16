@@ -97,3 +97,12 @@ ON station.code = sensor.station_code) as S
 ON M.station = S.station and M.sensor_id = S.sensor_id) as Res
 WHERE Res.date::date = date '2024-05-28' 
 
+
+
+DROP TABLE IF EXISTS  forecast;
+DROP TABLE IF EXISTS station CASCADE;
+DROP TABLE IF EXISTS measurement CASCADE;
+DROP TABLE IF EXISTS sensor CASCADE;
+DROP TABLE IF EXISTS alembic_version;
+
+

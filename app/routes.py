@@ -1,9 +1,12 @@
+'''
+flask routes
+'''
 from app import app, async_session
 from app.utils import flatten_data, calc_averages
 from app.models import Measurement, Forecast, Station, Sensor
 from flask import jsonify, request
 from sqlalchemy.sql import select, update, delete
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from datetime import date
 from markupsafe import escape
 from sqlalchemy.orm import aliased, Session
@@ -16,6 +19,9 @@ def index():
 
 @app.route('/measurements')
 async def get_data():
+    '''
+    Just for quick tests
+    '''
     async with async_session() as session:
         stmt = select(Measurement).order_by(Measurement.date)
         result = await session.execute(stmt)
@@ -25,6 +31,9 @@ async def get_data():
 
 @app.route('/ingest', methods=['POST'])
 async def ingest_data():
+    '''
+    Endpoint where IoT devices will post their data
+    '''
     try:
         content = request.json
         flattened = flatten_data(content)
@@ -37,10 +46,15 @@ async def ingest_data():
         return {"error": f"Malformed data: {e}"},  400
     except IntegrityError as e:
         return {"error": f"Integrity Error: {e}"},  400
+    except SQLAlchemyError as e:
+        return {"error": f"Execution failed: {e}"}, 500
 
 
 @app.route('/forecast', methods=['POST'])
 async def add_forecast():
+    '''
+    Endpoint where UI will post the forecasts
+    '''
     try:
         F = Forecast(**request.json)
         async with async_session() as session:
@@ -51,10 +65,16 @@ async def add_forecast():
         return {"error": f"Malformed data: {e}"},  400
     except IntegrityError as e:
         return {"error": f"Integrity Error: {e}"},  400
+    except SQLAlchemyError as e:
+        return {"error": f"Execution failed: {e}"}, 500
 
 
 @app.route('/forecast/<city>/<usrdate>', methods=['GET'])
 async def get_forecast(city, usrdate):
+    '''
+    Get the latest forecast for a certain city on a certain date.
+    date must be a string in  ISO 8601 format. e.g. "2024-05-28"
+    '''
     try:
         target_date = date.fromisoformat(escape(usrdate))
         async with async_session() as session:
@@ -71,12 +91,26 @@ async def get_forecast(city, usrdate):
                     return {"error": f"no data for {usrdate}"}, 200
     except TypeError as e:
         return {"error": f"Malformed data: {e}"},  400
+    except SQLAlchemyError as e:
+        return {"error": f"Execution failed: {e}"}, 500
 
 
 @app.route('/weather/<city>/<usrdate>', methods=['GET'])
 async def get_weather(city, usrdate):
     '''
-        Example Query:
+        Get the real weather (as contrasted to the forecast).
+        Returns the average Temperature, Humidity, Wind 
+        for a city on a certain date.
+        
+        date selects a certain window on table measurement 
+        (which is to be implemented with TimescaleDB postgres
+        extension so as to be efficient)
+        On that window we need to select only the sensors belonging to 
+        stations that are located in the said city, thus
+        we need to join sensor and station and then join the result to 
+        the previously selected measurement rows.
+
+        Example Query (pg SQL):
         SELECT * FROM (measurement M 
         JOIN
             (SELECT station.code as station, sensor.id as sensor_id 
@@ -92,20 +126,23 @@ async def get_weather(city, usrdate):
                 subq = select(Station, Sensor).join(Sensor).subquery()
                 station_subq = aliased(Station, subq, name="station")
                 sensor_subq = aliased(Sensor, subq, name="sensor")
-                #stmt = select(Measurement, station_subq, sensor_subq)\
                 stmt = select(Measurement)\
                 .join(subq, Measurement.station == station_subq.code and Measurement.sensor_id == sensor_subq.sensor_id)\
                 .where(cast(Measurement.date, Date) == target_date)
                 result = await session.execute(stmt)
                 data = result.fetchall()
+                # once we have all relevant rows we need to calculate
+                # averages for temperature, humidity, wind
                 return calc_averages(data=data, city=city, date=usrdate), 200
     except TypeError as e:
         return {"error": f"Malformed data: {e}"},  400
+    except SQLAlchemyError as e:
+        return {"error": f"Execution failed: {e}"}, 500
 
 
 @app.route('/station', methods=['POST'])
 async def add_station():
-    '''Adds a new meteorological station'''
+    '''Endpoint to add a new meteorological station'''
     try:
         S = Station(**request.json)
         async with async_session() as session:
@@ -116,11 +153,13 @@ async def add_station():
         return {"error": f"Malformed data: {e}"},  400
     except IntegrityError as e:
         return {"error": f"Integrity Error: {e}"},  400
+    except SQLAlchemyError as e:
+        return {"error": f"Execution failed: {e}"}, 500
 
 
 @app.route('/station', methods=['PUT'])
 async def replace_station():
-    '''Replaces (edits) a meteorological station'''
+    '''Endpoint to replaces (edit) a meteorological station'''
     try:
         S = Station(**request.json)
         async with async_session() as session:
@@ -135,6 +174,8 @@ async def replace_station():
         return {"error": f"Malformed data: {e}"},  400
     except IntegrityError as e:
         return {"error": f"Integrity Error: {e}"},  400
+    except SQLAlchemyError as e:
+        return {"error": f"Execution failed: {e}"}, 500
 
 
 @app.route('/station/<code>', methods=['DELETE'])
@@ -146,13 +187,18 @@ async def delete_station(code):
                 stmt = delete(Station)\
                 .where(Station.code == code)
                 await session.execute(stmt)
-                return 200
+                return {}, 200
     except IntegrityError as e:
         return {"error": f"Integrity Error: {e}"},  400
+    except SQLAlchemyError as e:
+        return {"error": f"Execution failed: {e}"}, 500
 
 
 @app.route('/sensor', methods=['POST'])
 async def add_sensor():
+    '''
+    Adds a new sensor
+    '''
     try:
         S = Sensor(**request.json)
         async with async_session() as session:
@@ -163,4 +209,5 @@ async def add_sensor():
         return {"error": f"Malformed data: {e}"},  400
     except IntegrityError as e:
         return {"error": f"Integrity Error: {e}"},  400
-
+    except SQLAlchemyError as e:
+        return {"error": f"Execution failed: {e}"}, 500
