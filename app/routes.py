@@ -12,22 +12,6 @@ from markupsafe import escape
 from sqlalchemy.orm import aliased, Session
 from sqlalchemy import and_, cast, Date
 
-@app.route('/')
-@app.route('/health')
-def index():
-    return "up", 200
-
-@app.route('/measurements')
-async def get_data():
-    '''
-    Just for quick tests
-    '''
-    async with async_session() as session:
-        stmt = select(Measurement).order_by(Measurement.date)
-        result = await session.execute(stmt)
-        data = result.fetchall()
-        return jsonify([tuple(row) for row in data])
-
 
 @app.route('/ingest', methods=['POST'])
 async def ingest_data():
@@ -211,3 +195,26 @@ async def add_sensor():
         return {"error": f"Integrity Error: {e}"},  400
     except SQLAlchemyError as e:
         return {"error": f"Execution failed: {e}"}, 500
+
+
+@app.route('/')
+@app.route('/health')
+def index():
+    '''
+    Show if we're up and listening
+    '''
+    return "up", 200
+
+
+@app.route('/measurements')
+async def get_data():
+    '''
+    Get all measurements.
+    Just for quick tests during dev
+    '''
+    async with async_session() as session:
+        stmt = select(Measurement).order_by(Measurement.date)
+        result = await session.execute(stmt)
+        data = result.fetchall()
+        return jsonify([tuple(row) for row in data])
+
