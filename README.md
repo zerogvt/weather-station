@@ -1,5 +1,6 @@
 # weather-station
 Meteorological WEB App Ingesting IoT Weather Station Data
+(Take-home project, part of the interview process for EXUS)
 
 # Example http calls
 See populate_db.sh
